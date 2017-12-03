@@ -224,7 +224,7 @@ class SocialTokenOnlyAuthView(BaseSocialAuthView):
 
 class SocialTokenUserAuthView(BaseSocialAuthView):
     serializer_class = UserTokenSerializer
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (ExpiringTokenAuthentication, )
 
 
 class JWTAuthMixin(object):

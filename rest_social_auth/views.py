@@ -21,7 +21,8 @@ from social_core.exceptions import AuthException
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.authentication import TokenAuthentication
+from rest_framework_expiring_authtoken.models import ExpiringToken
+from rest_framework_expiring_authtoken.authentication import ExpiringTokenAuthentication
 from rest_framework.permissions import AllowAny
 from requests.exceptions import HTTPError
 
@@ -118,6 +119,16 @@ class BaseSocialAuthView(GenericAPIView):
             return user
         resp_data = self.get_serializer(instance=user)
         self.do_login(request.backend, user)
+
+        # Validating / re-generating the token
+        token, _ = ExpiringToken.objects.get_or_create(
+                user=user
+            )
+        if token.expired():
+           token.delete()
+           token = ExpiringToken.objects.create(
+               user=user
+           )
         return Response(resp_data.data)
 
     def get_object(self):
@@ -208,7 +219,7 @@ class SocialSessionAuthView(BaseSocialAuthView):
 
 class SocialTokenOnlyAuthView(BaseSocialAuthView):
     serializer_class = TokenSerializer
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (ExpiringTokenAuthentication, )
 
 
 class SocialTokenUserAuthView(BaseSocialAuthView):
